@@ -1,0 +1,6 @@
+{
+  "name": "FORENSIQ AI",
+  "description": "Scientific Evidence Verification at Scale - Clinical forensic media analysis and forensic authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
