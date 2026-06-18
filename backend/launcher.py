@@ -18,16 +18,14 @@ def log(msg):
     print(f"[FORENSIQ] {msg}", flush=True)
 
 def check_backend_alive():
-    for _ in range(3):
-        try:
-            urllib.request.urlopen(
-                f"http://localhost:{PORT}/ping",
-                timeout=5
-            )
-            return True
-        except:
-            time.sleep(1)
-    return False
+    try:
+        urllib.request.urlopen(
+            f"http://localhost:{PORT}/ping",
+            timeout=5
+        )
+        return True
+    except:
+        return False
 
 def kill_process(proc):
     if proc is None:
@@ -108,14 +106,14 @@ def start_flask():
     ).start()
 
     log("Waiting for backend to start...")
-    for i in range(20):
+    for i in range(60):
         time.sleep(2)
-        if check_backend_alive():
-            log("Backend is ONLINE at localhost:5000")
-            return True
         if flask_proc.poll() is not None:
             log("Backend process died during startup!")
             return False
+        if check_backend_alive():
+            log("Backend is ONLINE at localhost:5000")
+            return True
 
     log("Backend started but health check uncertain")
     return True
@@ -163,6 +161,11 @@ def start_tunnel(cf_bin):
                 log("Paste this in the frontend"
                     " URL field if needed")
                 log("="*50)
+                try:
+                    with open("tunnel_url.txt", "w") as f:
+                        f.write(url)
+                except Exception as e:
+                    log(f"Failed to write tunnel URL: {e}")
                 return url
 
     log("Could not get tunnel URL. "
@@ -173,7 +176,7 @@ def monitor_forever(cf_bin):
     global should_run
     backend_fail_count = 0
     tunnel_fail_count = 0
-    CHECK_INTERVAL = 20
+    CHECK_INTERVAL = 60
 
     log("Monitor started. Checking every "
         f"{CHECK_INTERVAL} seconds...")

@@ -6,6 +6,7 @@ import re
 import io
 import time
 import shutil
+
 import tempfile
 import urllib.request
 import traceback
@@ -13,8 +14,6 @@ import random
 from PIL import Image, ImageChops
 import numpy as np
 import cv2
-import torch
-torch.set_num_threads(1)
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -175,15 +174,20 @@ async def root():
         "models_ready": models_ready
     }
 
-# Use GPU if available
-device = 0 if torch.cuda.is_available() else -1
-print(f"Using device: {'GPU' if device >= 0 else 'CPU'}")
+# Use GPU if available (deferred to background load)
+device = -1
 
 def load_models_background():
     global models_ready, pipeline1, pipeline2, pipeline3, pipeline4
     global face_cascade, eye_cascade, gpt2_model, gpt2_tokenizer
 
     print("Loading AI models in background...")
+    
+    import torch
+    torch.set_num_threads(1)
+    global device
+    device = 0 if torch.cuda.is_available() else -1
+    print(f"Using device: {'GPU' if device >= 0 else 'CPU'}")
     
     class FallbackPipeline:
         def __init__(self, name):
@@ -238,6 +242,7 @@ def get_frame_sharpness(frame):
     return float(cv2.Laplacian(gray, cv2.CV_64F).var())
 
 def get_model1_score(pil_image):
+    import torch
     try:
         with torch.no_grad():
             result = pipeline1(pil_image)
@@ -252,6 +257,7 @@ def get_model1_score(pil_image):
         return 50.0
 
 def get_model2_score(pil_image):
+    import torch
     try:
         with torch.no_grad():
             result = pipeline2(pil_image)
@@ -1040,6 +1046,7 @@ def calculate_perplexity(text):
         return float(perplexity)
         
     try:
+        import torch
         inputs = gpt2_tokenizer(text, return_tensors='pt')
         input_ids = inputs['input_ids'].to(gpt2_model.device)
         if input_ids.shape[1] > 1024:
@@ -2015,6 +2022,7 @@ async def analyze_fast(
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 small = cv2.resize(rgb, (160, 160))
                 pil = Image.fromarray(small)
+                import torch
                 with torch.no_grad():
                     r1 = pipeline1(pil)
                 for r in r1:

@@ -32,10 +32,10 @@ export default function App() {
   const [showGuide, setShowGuide] = useState<boolean>(false);
 
   const testBackendConnection = async () => {
-    const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://forensiq-ai-backend.hf.space";
+    const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://div-contracting-european-permission.trycloudflare.com";
     const candidates = [
-      HF_BACKEND,
       "http://localhost:5000",
+      HF_BACKEND,
       localStorage.getItem("forensiq_backend_url") || ""
     ].filter(u => u && u.length > 5)
 
@@ -87,10 +87,10 @@ export default function App() {
   React.useEffect(() => {
     const keepAlive = setInterval(async () => {
         try {
-            await fetch(backendUrl + "/wake")
+            await fetch(backendUrl + "/ping")
             console.log("Keep-alive ping sent")
         } catch(e) {}
-    }, 25 * 60 * 1000)
+    }, 4 * 60 * 1000)
     
     return () => clearInterval(keepAlive)
   }, [backendUrl])
