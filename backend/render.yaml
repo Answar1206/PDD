@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: forensiq-ai-backend
+    env: docker
+    region: oregon
+    plan: free # Render free tier, change to 'starter' for more RAM if models hit OOM
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: HF_TOKEN
+        sync: false # Requires manual entry in the dashboard to avoid Hugging Face rate limits

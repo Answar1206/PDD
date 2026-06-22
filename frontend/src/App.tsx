@@ -21,7 +21,7 @@ import HowItWorks from './components/HowItWorks';
 import { TabType } from './components/Header';
 
 export default function App() {
-  const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://forensiq-ai-backend.hf.space";
+  const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://pdd-backend-4ttt.onrender.com";
   const DEFAULT_URL = HF_BACKEND;
   const [backendUrl, setBackendUrl] = useState<string>(
     localStorage.getItem('forensiq_backend_url') || DEFAULT_URL
@@ -32,7 +32,7 @@ export default function App() {
   const [showGuide, setShowGuide] = useState<boolean>(false);
 
   const testBackendConnection = async () => {
-    const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://div-contracting-european-permission.trycloudflare.com";
+    const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://pdd-backend-4ttt.onrender.com";
     const candidates = [
       "http://localhost:5000",
       HF_BACKEND,
@@ -211,7 +211,7 @@ export default function App() {
             value={backendUrl}
             onChange={(e) => setBackendUrl(e.target.value)}
             className="border border-outline-variant rounded-md px-2 py-1 w-56 text-xs focus:outline-none focus:border-primary font-mono text-on-surface bg-surface-container-low"
-            placeholder="http://localhost:5000"
+            placeholder="https://pdd-backend-4ttt.onrender.com"
           />
           <button 
             onClick={() => {

@@ -16,7 +16,7 @@ if %ERRORLEVEL% EQU 0 (
 
 echo Starting backend in completely detached hidden window...
 :: Starts python.exe from the virtual environment running launcher.py silently, logging to backend_service.log
-powershell -Command "Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList 'launcher.py' -RedirectStandardOutput 'backend_service.log' -RedirectStandardError 'backend_error.log' -WindowStyle Hidden -WorkingDirectory (Get-Location).Path"
+powershell -Command "$p = (Get-Location).Path; Start-Process -FilePath \"$p\.venv\Scripts\python.exe\" -ArgumentList '-u launcher.py' -RedirectStandardOutput \"$p\backend_service.log\" -RedirectStandardError \"$p\backend_error.log\" -WindowStyle Hidden -WorkingDirectory $p"
 
 echo Waiting for server to initialize...
 timeout /t 5 /nobreak >nul
