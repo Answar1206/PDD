@@ -147,8 +147,8 @@ export default function VideoAnalysis({ backendUrl, modelsReady, onAddAnalyzedLo
   };
 
   const runVerificationRequest = async (isUrl: boolean) => {
-    if (videoRef.current) videoRef.current.pause();
-    if (mainVideoRef.current) mainVideoRef.current.pause();
+    if (videoRef.current) videoRef.current.play();
+    if (mainVideoRef.current) mainVideoRef.current.play();
 
     setState('analyzing');
     setProgress(15);
@@ -218,8 +218,7 @@ export default function VideoAnalysis({ backendUrl, modelsReady, onAddAnalyzedLo
 
     } catch (err: any) {
       console.error("Analysis error:", err);
-      if (err.message.includes("fetch") ||
-          err.message.includes("Failed") ||
+      if (err.message.includes("Failed to fetch") ||
           err.message.includes("NetworkError")) {
         setErrorMessage("Cannot connect to backend. The server might still be starting, please wait a moment.");
       } else {

@@ -21,7 +21,7 @@ import HowItWorks from './components/HowItWorks';
 import { TabType } from './components/Header';
 
 export default function App() {
-  const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://pdd-backend-4ttt.onrender.com";
+  const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5001";
   const DEFAULT_URL = HF_BACKEND;
   const [backendUrl, setBackendUrl] = useState<string>(
     localStorage.getItem('forensiq_backend_url') || DEFAULT_URL
@@ -32,9 +32,9 @@ export default function App() {
   const [showGuide, setShowGuide] = useState<boolean>(false);
 
   const testBackendConnection = async () => {
-    const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "https://pdd-backend-4ttt.onrender.com";
+    const HF_BACKEND = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5001";
     const candidates = [
-      "http://localhost:5000",
+      "http://127.0.0.1:5001",
       HF_BACKEND,
       localStorage.getItem("forensiq_backend_url") || ""
     ].filter(u => u && u.length > 5)
@@ -211,7 +211,7 @@ export default function App() {
             value={backendUrl}
             onChange={(e) => setBackendUrl(e.target.value)}
             className="border border-outline-variant rounded-md px-2 py-1 w-56 text-xs focus:outline-none focus:border-primary font-mono text-on-surface bg-surface-container-low"
-            placeholder="https://pdd-backend-4ttt.onrender.com"
+            placeholder="http://127.0.0.1:5001"
           />
           <button 
             onClick={() => {
@@ -245,7 +245,7 @@ export default function App() {
             <HowItWorks />
           )}
 
-          {currentTab === 'dashboard' && (
+          {currentTab === 'history' && (
             <HistoryTable 
               records={records}
               onSelectRecord={handleSelectRecord}

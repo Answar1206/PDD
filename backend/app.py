@@ -2,14 +2,16 @@
 # Deployed on Hugging Face Spaces
 
 import os
-import re
+import threading
 import io
 import time
+import uuid
+import re
+import math
 import shutil
-
-import tempfile
 import urllib.request
 import traceback
+import base64
 import random
 from PIL import Image, ImageChops
 import numpy as np
@@ -31,12 +33,21 @@ try:
 except ImportError:
     sent_tokenize = None
 
+try:
+    import torch
+    from transformers import pipeline
+except ImportError:
+    pass
+
 # Initialize FastAPI application
 app = FastAPI(
     title="FORENSIQ AI Backend Platform",
     description="AI-Powered Multi-Source Forensic Analysis System",
     version="1.0.0"
 )
+
+TEMP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -56,37 +67,7 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-@app.middleware("http")
-async def cors_middleware(request, call_next):
-    if request.method == "OPTIONS":
-        return JSONResponse(
-            content={},
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods":
-                    "GET, POST, PUT, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Max-Age": "86400"
-            }
-        )
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
 
-@app.options("/{full_path:path}")
-async def preflight(full_path: str):
-    return JSONResponse(
-        content={"status": "ok"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*"
-        }
-    )
-
-# ---------------------------------------------------------
 # OTP AUTHENTICATION
 # ---------------------------------------------------------
 otp_store = {}
@@ -183,17 +164,30 @@ def load_models_background():
 
     print("Loading AI models in background...")
     
-    import torch
-    torch.set_num_threads(1)
-    global device
-    device = 0 if torch.cuda.is_available() else -1
-    print(f"Using device: {'GPU' if device >= 0 else 'CPU'}")
-    
+    try:
+        torch.set_num_threads(1)
+        global device
+        device = 0 if torch.cuda.is_available() else -1
+        print(f"Using device: {'GPU' if device >= 0 else 'CPU'}")
+    except:
+        device = -1
+
     class FallbackPipeline:
         def __init__(self, name):
             self.name = name
         def __call__(self, *args, **kwargs):
             if 'openai-detector' in self.name:
+                text = args[0] if args else kwargs.get('text', '')
+                if isinstance(text, str):
+                    text_lower = text.lower()
+                    ai_phrases = ['furthermore', 'moreover', 'delve', 'tapestry', 'testament', 'crucial', 'additionally', 'in conclusion', 'beacon', 'robust', 'landscape', 'realm', 'navigating', 'seamless']
+                    ai_hits = sum(1 for w in ai_phrases if w in text_lower)
+                    if ai_hits >= 2:
+                        return [{'label': 'LABEL_1', 'score': min(0.99, 0.70 + (ai_hits * 0.05))}]
+                    elif ai_hits == 1:
+                        return [{'label': 'LABEL_1', 'score': 0.60}]
+                    else:
+                        return [{'label': 'LABEL_0', 'score': 0.90}]
                 return [{'label': 'LABEL_0', 'score': 0.88}]
             elif 'AI-image-detector' in self.name:
                 return [{'label': 'human', 'score': 0.85}]
@@ -201,7 +195,6 @@ def load_models_background():
                 return [{'label': 'Real', 'score': 0.92}]
 
     try:
-        from transformers import pipeline
         pipeline1 = FallbackPipeline("dima806/deepfake_vs_real_image_detection")
         print("Model 1 loaded (Fallback)")
         pipeline2 = FallbackPipeline("prithivMLmods/Deep-Fake-Detector-Model")
@@ -2632,6 +2625,7 @@ async def analyze_pdf(
         is_pdf = filename.endswith('.pdf')
         extracted_text = ""
         page_count = 1
+        all_thumbnails = []
         
         if is_pdf:
             try:
@@ -2639,16 +2633,26 @@ async def analyze_pdf(
                 doc = fitz.open(temp_filepath)
                 page_count = len(doc)
                 pages_to_analyze = min(page_count, 5)
+                pages_for_thumbnails = min(page_count, 50)
                 
-                for page_idx in range(pages_to_analyze):
+                for page_idx in range(pages_for_thumbnails):
                     page = doc[page_idx]
-                    text_page = page.get_text()
-                    if text_page:
-                        extracted_text += text_page + "\n"
-                    pix = page.get_pixmap(dpi=150)
+                    
+                    if page_idx < pages_to_analyze:
+                        text_page = page.get_text()
+                        if text_page:
+                            extracted_text += text_page + "\n"
+                            
+                    # Lower DPI for pages only used for thumbnails to save memory
+                    dpi = 150 if page_idx < pages_to_analyze else 72
+                    pix = page.get_pixmap(dpi=dpi)
                     img_data = pix.tobytes("png")
                     pil_img = Image.open(io.BytesIO(img_data)).convert('RGB')
-                    extracted_images.append(pil_img)
+                    
+                    if page_idx < pages_to_analyze:
+                        extracted_images.append(pil_img)
+                    
+                    all_thumbnails.append(pil_img)
                 doc.close()
             except Exception as e:
                 print(f"Error parsing PDF: {e}")
@@ -2774,6 +2778,19 @@ async def analyze_pdf(
         else:
             file_size_str = f"{file_bytes / 1024:.1f} KB"
 
+        thumbnails_b64 = []
+        thumb_source = all_thumbnails if is_pdf else extracted_images
+        for pil_img in thumb_source:
+            try:
+                thumb = pil_img.copy()
+                thumb.thumbnail((300, 400))
+                buffered = io.BytesIO()
+                thumb.save(buffered, format="PNG")
+                img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                thumbnails_b64.append(f"data:image/png;base64,{img_str}")
+            except Exception:
+                pass
+
         return {
             "success": True,
             "final_score": int(final_score),
@@ -2800,7 +2817,8 @@ async def analyze_pdf(
                 "file_size": file_size_str,
                 "has_text": has_text,
                 "word_count": word_count
-            }
+            },
+            "thumbnails": thumbnails_b64
         }
 
     except Exception as e:
@@ -2963,7 +2981,11 @@ async def analyze_paragraph(
 # ---------------------------------------------------------
 # HEALTH & UTILITY ROUTES
 # ---------------------------------------------------------
-PORT = int(os.environ.get("PORT", 5000))
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
+
+PORT = 5001
 
 if __name__ == "__main__":
     import uvicorn

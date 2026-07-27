@@ -6,8 +6,8 @@
 import React from 'react';
 
 interface SidebarProps {
-  currentTab: 'dashboard' | 'text' | 'pdf' | 'image' | 'video' | 'settings';
-  onNavigate: (tab: 'dashboard' | 'text' | 'pdf' | 'image' | 'video' | 'settings') => void;
+  currentTab: 'history' | 'text' | 'pdf' | 'image' | 'video' | 'settings';
+  onNavigate: (tab: 'history' | 'text' | 'pdf' | 'image' | 'video' | 'settings') => void;
   storageUsedGB: number;
   storageMaxGB: number;
 }
@@ -19,15 +19,15 @@ export default function Sidebar({ currentTab, onNavigate, storageUsedGB, storage
     <aside className="hidden md:flex fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-outline-variant flex-col p-6 gap-6 select-none" id="desktop-sidebar">
       <nav className="flex flex-col gap-1.5 flex-1">
         <button
-          onClick={() => onNavigate('dashboard')}
+          onClick={() => onNavigate('history')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-medium text-sm cursor-pointer text-left ${
-            currentTab === 'dashboard'
+            currentTab === 'history'
               ? 'bg-surface-container text-primary font-bold shadow-xs'
               : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
           }`}
         >
-          <span className={`material-symbols-outlined text-xl ${currentTab === 'dashboard' ? 'filled-icon' : 'empty-icon'}`}>dashboard</span>
-          <span>Dashboard / Logs</span>
+          <span className={`material-symbols-outlined text-xl ${currentTab === 'history' ? 'filled-icon' : 'empty-icon'}`}>history</span>
+          <span>History</span>
         </button>
 
         <button

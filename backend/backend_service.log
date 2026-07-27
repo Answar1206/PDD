@@ -1,0 +1,8 @@
+==================================================
+  FORENSIQ AI - PERMANENT LAUNCHER
+  Backend auto-restarts if it crashes
+  Tunnel auto-restarts if it dies
+  Press Ctrl+C to stop
+==================================================
+[FORENSIQ] Starting Flask backend on port 5001...
+[FORENSIQ] Waiting for backend to start...

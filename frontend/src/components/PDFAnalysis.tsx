@@ -20,9 +20,14 @@ export default function PDFAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog 
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [activeFile, setActiveFile] = useState<File | null>(null);
+  const [activeUrl, setActiveUrl] = useState<string>('');
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      setActiveFile(file);
+      setActiveUrl('');
       setIsScanning(true);
       setScanResult(null);
 
@@ -51,7 +56,7 @@ export default function PDFAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog 
 
           const pages = Array.from({ length: pdfInfo.pages || 1 }, (_, i) => ({
             pageNumber: i + 1,
-            thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCAKWBJ-aLddn7E--oDjjwzZLYy7-QNSDxUJQHAT7nPkN7FshuuU1sIQRGTn8Q0N6cbd2xFAyE-ZT2KUSAbj3TTIBYi6h2ZyFP3kMP196kNPxeBREpM6PgSzVSJ0sGzVjGAovb0OXyB2ToPatpNdsWINOAnQ7S7ozshCCJCzoEmmFjZfjkn7lzmSE1jQQtsp8BcMK--hqqX5EHlbRoPPA4JbsH7Gc77EN_MWVOgPcdnxiwpLggsC9sdGLkhQDmUpqw_rcNW6MGCqSo',
+            thumbnailUrl: (data.thumbnails && data.thumbnails[i]) ? data.thumbnails[i] : 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg',
             status: (score > 75 ? 'Authentic' : (score > 45 ? 'Modified' : 'Anomalous')) as 'Authentic' | 'Modified' | 'Anomalous',
             altText: `Page ${i + 1} analysis track`
           }));
@@ -101,7 +106,7 @@ export default function PDFAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog 
         }
       } catch (err: any) {
         console.error('Full error:', err);
-        if (err.message.includes('fetch') || err.message.includes('Failed') || err.message.includes('NetworkError')) {
+        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
           setErrorMessage('Cannot connect to backend. The server might still be starting, please wait a moment.');
         } else {
           setErrorMessage(err.message || 'Unknown error occurred');
@@ -114,6 +119,8 @@ export default function PDFAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog 
 
   const handleUrlScan = async () => {
     if (!urlInput.trim()) return;
+    setActiveFile(null);
+    setActiveUrl(urlInput);
     setIsScanning(true);
     setScanResult(null);
 
@@ -142,7 +149,7 @@ export default function PDFAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog 
 
         const pages = Array.from({ length: pdfInfo.pages || 1 }, (_, i) => ({
           pageNumber: i + 1,
-          thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCAKWBJ-aLddn7E--oDjjwzZLYy7-QNSDxUJQHAT7nPkN7FshuuU1sIQRGTn8Q0N6cbd2xFAyE-ZT2KUSAbj3TTIBYi6h2ZyFP3kMP196kNPxeBREpM6PgSzVSJ0sGzVjGAovb0OXyB2ToPatpNdsWINOAnQ7S7ozshCCJCzoEmmFjZfjkn7lzmSE1jQQtsp8BcMK--hqqX5EHlbRoPPA4JbsH7Gc77EN_MWVOgPcdnxiwpLggsC9sdGLkhQDmUpqw_rcNW6MGCqSo',
+          thumbnailUrl: (data.thumbnails && data.thumbnails[i]) ? data.thumbnails[i] : 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg',
           status: (score > 75 ? 'Authentic' : (score > 45 ? 'Modified' : 'Anomalous')) as 'Authentic' | 'Modified' | 'Anomalous',
           altText: `Page ${i + 1} analysis track`
         }));
@@ -193,7 +200,7 @@ export default function PDFAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog 
       }
     } catch (err: any) {
       console.error('Full error:', err);
-      if (err.message.includes('fetch') || err.message.includes('Failed') || err.message.includes('NetworkError')) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
         setErrorMessage('Cannot connect to backend. The server might still be starting, please wait a moment.');
       } else {
         setErrorMessage(err.message || 'Unknown error occurred');
@@ -266,6 +273,15 @@ Metadata alert: Altered headers flag raised.`;
     document.body.removeChild(downloadAnchor);
   };
 
+  const getScoreColor = (credScore: number) => {
+    if (credScore >= 75) return '#86efac'; // Light Green
+    if (credScore >= 45) return '#D97706'; // Yellow
+    return '#DC2626'; // Red
+  };
+
+  const credScore = scanResult ? (100 - scanResult.riskScore) : 0;
+  const isOriginal = scanResult ? credScore >= 75 : false;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left animate-in fade-in duration-300">
       
@@ -302,50 +318,122 @@ Metadata alert: Altered headers flag raised.`;
         )}
 
         {/* Upload Zone */}
-        <div className={`bg-white border-2 border-dashed border-outline-variant rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all shadow-xs relative ${modelsReady === false ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary cursor-pointer group'}`}>
-          <input 
-            type="file" 
-            accept=".pdf" 
-            onChange={handleFileUpload} 
-            disabled={modelsReady === false}
-            className={`absolute inset-0 opacity-0 z-10 ${modelsReady === false ? 'cursor-not-allowed hidden' : 'cursor-pointer'}`} 
-          />
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-105 transition-all text-primary">
-            <span className="material-symbols-outlined text-3xl">upload_file</span>
+        {!activeFile && !activeUrl && !isScanning && (
+          <div className={`bg-white border-2 border-dashed border-outline-variant rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all shadow-xs relative ${modelsReady === false ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary cursor-pointer group'}`}>
+            <input 
+              type="file" 
+              accept=".pdf" 
+              onChange={handleFileUpload} 
+              disabled={modelsReady === false}
+              className={`absolute inset-0 opacity-0 z-10 ${modelsReady === false ? 'cursor-not-allowed hidden' : 'cursor-pointer'}`} 
+            />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-105 transition-all text-primary">
+              <span className="material-symbols-outlined text-3xl">upload_file</span>
+            </div>
+            <h3 className="font-headline text-base font-bold text-on-surface mb-1">Drop Forensic PDF</h3>
+            <p className="font-sans text-xs text-on-surface-variant max-w-[210px] leading-relaxed mb-5">
+              Drag and drop document files up to 100MB for deep clinical scan.
+            </p>
+            <span className="bg-primary text-white font-sans text-xs font-bold px-5 py-2 rounded-xl group-hover:bg-primary-container transition-colors shadow-xs">
+              Select File
+            </span>
           </div>
-          <h3 className="font-headline text-base font-bold text-on-surface mb-1">Drop Forensic PDF</h3>
-          <p className="font-sans text-xs text-on-surface-variant max-w-[210px] leading-relaxed mb-5">
-            Drag and drop document files up to 100MB for deep clinical scan.
-          </p>
-          <span className="bg-primary text-white font-sans text-xs font-bold px-5 py-2 rounded-xl group-hover:bg-primary-container transition-colors shadow-xs">
-            Select File
-          </span>
-        </div>
+        )}
 
         {/* URL Input */}
-        <div className="bg-white border border-outline-variant rounded-2xl p-5 shadow-xs">
-          <label className="font-mono text-[10px] font-bold text-on-surface-variant block mb-2.5 uppercase tracking-wider">
-            Analyze via URL
-          </label>
-          <div className="flex gap-2">
-            <input 
-              className="flex-1 bg-surface-container-low border border-outline-variant/60 rounded-xl px-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface truncate disabled:opacity-50" 
-              placeholder="https://evidence.io/document-1202.pdf" 
-              type="text"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              disabled={modelsReady === false}
-            />
-            <button 
-              onClick={handleUrlScan}
-              disabled={modelsReady === false}
-              className="material-symbols-outlined bg-surface-container text-on-surface hover:text-primary p-2 rounded-xl transition-colors cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Parse Link"
-            >
-              link
-            </button>
+        {!activeFile && !activeUrl && !isScanning && (
+          <div className="bg-white border border-outline-variant rounded-2xl p-5 shadow-xs">
+            <label className="font-mono text-[10px] font-bold text-on-surface-variant block mb-2.5 uppercase tracking-wider">
+              Analyze via URL
+            </label>
+            <div className="flex gap-2">
+              <input 
+                className="flex-1 bg-surface-container-low border border-outline-variant/60 rounded-xl px-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface truncate disabled:opacity-50" 
+                placeholder="https://evidence.io/document-1202.pdf" 
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                disabled={modelsReady === false}
+              />
+              <button 
+                onClick={handleUrlScan}
+                disabled={modelsReady === false}
+                className="material-symbols-outlined bg-surface-container text-on-surface hover:text-primary p-2 rounded-xl transition-colors cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Parse Link"
+              >
+                link
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Active File/URL Preview Card */}
+        {(activeFile || activeUrl || isScanning) && (
+          <div className="bg-white border border-outline-variant rounded-2xl p-5 shadow-xs flex flex-col gap-3 font-sans">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-10 h-10 min-w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                  <span className="material-symbols-outlined text-xl">{activeFile ? 'picture_as_pdf' : 'link'}</span>
+                </div>
+                <div className="text-left overflow-hidden">
+                  <h4 className="text-sm font-bold text-on-surface truncate" title={activeFile ? activeFile.name : activeUrl}>
+                    {activeFile ? activeFile.name : (activeUrl.split('/').pop() || 'Document URL')}
+                  </h4>
+                  {activeFile && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[11px] text-on-surface-variant/80 font-medium">
+                        {(activeFile.size / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                      <span className="bg-slate-100 text-slate-700 text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase">
+                        {activeFile.name.substring(activeFile.name.lastIndexOf('.') + 1)}
+                      </span>
+                    </div>
+                  )}
+                  {isScanning && (
+                    <p className="text-[11px] text-primary font-semibold mt-1 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                      Scanning...
+                    </p>
+                  )}
+                  {!isScanning && (
+                    <p className="text-[11px] text-green-600 font-semibold mt-1 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      Analysis Complete
+                    </p>
+                  )}
+                </div>
+              </div>
+              {!isScanning && (
+                <button 
+                  onClick={() => {
+                    setActiveFile(null);
+                    setActiveUrl('');
+                    setScanResult(null);
+                    setUrlInput('');
+                  }}
+                  className="w-8 h-8 min-w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-on-surface-variant/70 hover:text-error transition-all cursor-pointer"
+                  title="Remove file"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              )}
+            </div>
+            {!isScanning && (
+                <button 
+                  onClick={() => {
+                    setActiveFile(null);
+                    setActiveUrl('');
+                    setScanResult(null);
+                    setUrlInput('');
+                  }}
+                  className="w-full mt-2 bg-slate-100 hover:bg-slate-200 text-on-surface font-sans text-xs font-bold py-2.5 px-4 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 border border-outline-variant"
+                >
+                  <span className="material-symbols-outlined text-sm">cached</span>
+                  <span>Analyze Another Document</span>
+                </button>
+            )}
+          </div>
+        )}
 
         {/* Progressing state */}
         {isScanning && (
@@ -363,8 +451,8 @@ Metadata alert: Altered headers flag raised.`;
           <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-xs animate-in font-sans">
             <div className="px-5 py-4 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
               <h4 className="font-mono text-[10px] font-bold text-primary uppercase tracking-wider">Integrity Analysis</h4>
-              <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-error-container text-on-error-container">
-                ALERT
+              <span className={`font-mono text-[9px] font-bold px-2 py-0.5 rounded-full ${isOriginal ? 'bg-green-100 text-green-700' : 'bg-error-container text-on-error-container'}`}>
+                {isOriginal ? 'ORIGINAL' : 'ALERT'}
               </span>
             </div>
             
@@ -382,27 +470,27 @@ Metadata alert: Altered headers flag raised.`;
                     strokeWidth="8"
                   ></circle>
                   <circle 
-                    className="drop-shadow-[0_0_8px_rgba(134,239,172,0.6)]" 
                     cx="64" 
                     cy="64" 
                     fill="transparent" 
                     r="58" 
-                    stroke="#86efac" 
+                    stroke={getScoreColor(credScore)} 
                     strokeDasharray="364" 
-                    strokeDashoffset={364 - (364 * (100 - scanResult.riskScore)) / 100} 
+                    strokeDashoffset={364 - (364 * credScore) / 100} 
                     strokeWidth="8"
                     strokeLinecap="round"
                     style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                    className={isOriginal ? 'drop-shadow-[0_0_8px_rgba(134,239,172,0.6)]' : ''}
                   ></circle>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="font-headline text-2xl font-black text-on-surface">{100 - scanResult.riskScore}%</span>
-                  <span className="font-mono text-[8px] font-semibold text-on-surface-variant uppercase tracking-wider text-[#86efac] drop-shadow-sm">AUTHENTICITY</span>
+                  <span className="font-headline text-2xl font-black text-on-surface">{credScore}%</span>
+                  <span className="font-mono text-[8px] font-semibold text-on-surface-variant uppercase tracking-wider drop-shadow-sm" style={{ color: getScoreColor(credScore) }}>AUTHENTICITY</span>
                 </div>
               </div>
 
               <div className="text-center px-2">
-                <h5 className="font-headline text-base font-bold text-error mb-1.5">{scanResult.verdict}</h5>
+                <h5 className={`font-headline text-base font-bold mb-1.5 ${isOriginal ? 'text-green-600' : 'text-error'}`}>{scanResult.verdict}</h5>
                 <p className="font-sans text-[11px] text-on-surface-variant leading-relaxed">
                   {scanResult.description}
                 </p>
@@ -447,11 +535,11 @@ Metadata alert: Altered headers flag raised.`;
                       )}
                     </div>
                     
-                    <div className="aspect-[3/4] bg-surface-container-low relative">
+                    <div className="aspect-[3/4] bg-surface-container-low relative flex items-center justify-center p-2">
                       <img 
                         src={page.thumbnailUrl} 
                         alt={page.altText} 
-                        className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-opacity"
+                        className={`w-full h-full object-contain transition-opacity ${page.thumbnailUrl.includes('PDF_file_icon') ? 'opacity-50 group-hover:opacity-75 p-6' : 'opacity-85 group-hover:opacity-100'}`}
                         referrerPolicy="no-referrer"
                       />
                     </div>

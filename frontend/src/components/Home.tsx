@@ -1,12 +1,13 @@
 import React, { useRef } from 'react';
+import { motion } from 'motion/react';
 
 interface HomeProps {
-  onNavigate: (tab: 'home' | 'dashboard' | 'text' | 'pdf' | 'image' | 'video' | 'settings') => void;
+  onNavigate: (tab: 'home' | 'history' | 'text' | 'pdf' | 'image' | 'video' | 'settings') => void;
 }
 
 export default function Home({ onNavigate }: HomeProps) {
   const tools = [
-    { id: 'dashboard', name: 'Dashboard History', icon: 'history', imgUrl: '/dash_new.png', vidUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
+    { id: 'history', name: 'History', icon: 'history', imgUrl: '/dash_new.png', vidUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
     { id: 'video', name: 'Video Analysis', icon: 'movie', imgUrl: '/vid_new.png', vidUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4' },
     { id: 'image', name: 'Image Analysis', icon: 'image', imgUrl: '/img_new.png', vidUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4' },
     { id: 'pdf', name: 'PDF Analysis', icon: 'picture_as_pdf', imgUrl: '/pdf_new.png', vidUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4' },
@@ -60,11 +61,21 @@ export default function Home({ onNavigate }: HomeProps) {
               className="group cursor-pointer rounded-3xl p-6 h-64 md:h-80 flex flex-col justify-between border-2 border-[#800000] hover:border-[#800000] transition-all duration-500 hover:-translate-y-4 shadow-lg hover:shadow-2xl hover:shadow-[#800000]/30 relative overflow-hidden transform-gpu hover:scale-[1.02] bg-white"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              {/* Background Static Image */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center opacity-80 transition-transform duration-700" 
-                style={{ backgroundImage: `url(${tool.imgUrl})` }}
-              ></div>
+              {/* 3D Animated Original Background Image */}
+              <div className="absolute inset-0 overflow-hidden" style={{ perspective: 1000 }}>
+                <motion.div 
+                  className="absolute inset-0 bg-cover bg-center opacity-80" 
+                  style={{ backgroundImage: `url(${tool.imgUrl})`, scale: 1.25, transformStyle: 'preserve-3d' }}
+                  animate={{ 
+                    x: [0, -25, 25, 0],
+                    y: [0, 25, -25, 0],
+                    rotateZ: [0, 5, -5, 0],
+                    rotateX: [0, 15, -15, 0],
+                    rotateY: [0, -15, 15, 0],
+                  }}
+                  transition={{ duration: 6 + index, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </div>
 
               {/* Hover Video */}
               <video
@@ -77,7 +88,7 @@ export default function Home({ onNavigate }: HomeProps) {
               />
               
               {/* Overlay Gradient to make text readable */}
-              <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/70 to-white/20 group-hover:from-white/95 group-hover:via-white/70 transition-all duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/70 to-white/20 group-hover:from-white/95 group-hover:via-white/70 transition-all duration-500 pointer-events-none"></div>
 
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/90 shadow-md backdrop-blur-sm flex items-center justify-center border border-[#800000]/20 group-hover:bg-[#800000] transition-colors duration-300 z-10">
                 <span className="material-symbols-outlined text-[#800000] group-hover:text-white text-2xl md:text-3xl transition-colors duration-300">{tool.icon}</span>

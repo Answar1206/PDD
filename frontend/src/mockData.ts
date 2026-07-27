@@ -187,25 +187,25 @@ export const DEFAULT_PDF_RESULT: PDFAnalysisResult = {
   pages: [
     {
       pageNumber: 1,
-      thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCNRA4RV7-f80_ATXY7_dWUy5N8UxTjZ-kA81moufZiEa5ccT4gvArKMkquvI6_srodeQ_cPTc68sk5ApXhoFBcWIBIPHqd-L7RViVAE5VkofCbFyCVRd0si2LtETWEoj00aRwMsdxzHZb-jIhuCQIRtEEUrMYrmS-CHs3Z8WOErWsoxHlNFnAPR8tK7UczlBIkEpn7WsrpEL1id-2ODEEc_0DbfWfjM51ZsiVWqJLxyH5E8vIbyzYxftYRrOXedsyiWlmnCIB6tkI',
+      thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg',
       status: 'Anomalous',
       altText: 'A clean, clinical scan of a forensic document page with visible text and formal headers.'
     },
     {
       pageNumber: 2,
-      thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD2OvdqL9ZaTEmm8j7tpnN7e6iYWRsEhhrhnAcCfY1ZmbekX7NqirTFU1Z9Ark818bJaWsCnaPasZhFzfoZjScUKJ5Y2UcCPmXbexvikFEGwTJ0Yods50LLZMVaMseLRDifi17_Q4175bH7DcboaOdULhLw7zwM-I8YW3b8X07U6zboC1es7D-71IH2tXnaO8o5hOlkTx-ZcQnfVbsOnrq-b9wxIjcurG00K8xtkxYKiMkkvc27Q6g7UcIJeLGB1Elp3KEa6_1aMJ8',
+      thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg',
       status: 'Authentic',
       altText: 'A high-resolution top-down photograph of a professional document page with structured tables.'
     },
     {
       pageNumber: 3,
-      thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAzJNXVB4nwtrnd44SaC5rb9WRMubuFrjKvjX5b6I48gUzmuAdfV8wShBWbB5q1j-F1bQ6DVDDoHs3A-PalVwogZGRYkCQQ9hW61rGSXA5LuTU6idzqL90Uau5PXTrchRBqPh5fziboQ9J3QkUo4XLwcZ2CTpjoqdGx8HPZRoSe6bgKnvt20rPeXG7408uEcu30BLKHWddERKS5qivHhAA9woantejfp9d5hzN9Kuzs51TX674ekPzfb0ARGxwbER80bXZZHHTnByQ',
+      thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg',
       status: 'Authentic',
       altText: 'A macro shot of a forensic document showing detailed signatures.'
     },
     {
       pageNumber: 4,
-      thumbnailUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhK5uzMY9NAeKuWM6WxIsVS5_6NUw9dWD4QdVpgscDE0tbUhoBEN6auuWiudvPB-V8zitSZ1jy95G35GkAWYcpnpAixPzKOjrRi24ZA88IMo9Z5OMOElx93UTQGj1wEkOpHi6xlZ17LPg68Po2ClNWL1CYOnXfkDjuICKVqpHgwUUY9gRHlOHk3n4cSnTIgT6TtmHOQix7vhj0HEagVSpsMunub0JC9mlv6PzCM1cETnxQNpSoBZoCdg8kIBLjC7uiSSb3oNnnZik',
+      thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg',
       status: 'Modified',
       altText: 'Digital representation of a forensic report page with highlighted potential forgery.'
     }

@@ -13,7 +13,7 @@ interface SettingsPanelProps {
   backendUrl: string;
   setBackendUrl: (url: string) => void;
   backendOnline: boolean;
-  testBackendConnection: (customUrl?: string) => Promise<boolean>;
+  testBackendConnection: () => Promise<{ online: boolean; ready: boolean }>;
 }
 
 export default function SettingsPanel({ 
@@ -32,11 +32,6 @@ export default function SettingsPanel({
   const [autoSave, setAutoSave] = useState(false);
   const [advancedMetadata, setAdvancedMetadata] = useState(true);
   
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [apiKey, setApiKey] = useState('fsq_prod_live_83b27ae8c19fb2e998a12dc');
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [quota, setQuota] = useState(4512);
-
   const handleProfileSave = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateUser({
@@ -45,17 +40,6 @@ export default function SettingsPanel({
       email: email
     });
     alert('Investigator Profile saved successfully!');
-  };
-
-  const handleRegenerateKey = () => {
-    setIsRegenerating(true);
-    setTimeout(() => {
-      const generated = 'fsq_prod_live_' + Array.from({length: 24}, () => Math.floor(Math.random()*16).toString(16)).join('');
-      setApiKey(generated);
-      setIsRegenerating(false);
-      setQuota(0); // Reset quota on key regeneration!
-      alert('New production API keys provisioned successfully. Quota metrics reset.');
-    }, 1200);
   };
 
   return (
@@ -232,118 +216,57 @@ export default function SettingsPanel({
           </div>
         </section>
 
-        {/* Backend Connection Section */}
+        {/* Security & Subscription Section */}
         <section className="bg-white border border-outline-variant rounded-2xl p-6 shadow-xs">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-full md:w-1/3 select-none">
-              <h2 className="font-headline text-base font-bold text-on-surface mb-1">Backend Connection</h2>
+              <h2 className="font-headline text-base font-bold text-on-surface mb-1">Security & Subscription</h2>
               <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                Connect and authenticate with your local or cloud FORENSIQ AI analysis server.
+                Manage your account security and view your active subscription tier.
               </p>
             </div>
 
             <div className="w-full md:w-2/3 space-y-4">
-              <div className="flex items-center gap-3.5 p-3.5 bg-surface-container-low/50 rounded-2xl border border-outline-variant/60">
-                <div className="flex items-center gap-2 select-none">
-                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${backendOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                  <span className={`font-mono text-[10px] font-bold uppercase tracking-wider ${backendOnline ? 'text-green-600' : 'text-red-500'}`}>
-                    {backendOnline ? '● Online' : '● Offline'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-3.5">
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold text-on-surface-variant block uppercase tracking-wider">Backend API Server URL</label>
-                  <div className="flex gap-2">
-                    <input 
-                      className="w-full bg-white border border-outline-variant/60 rounded-xl px-4 py-2.5 font-sans text-xs font-semibold focus:ring-2 focus:ring-primary/10 transition-all outline-none truncate" 
-                      type="text" 
-                      value={backendUrl}
-                      onChange={(e) => {
-                        const url = e.target.value;
-                        setBackendUrl(url);
-                        localStorage.setItem('forensiq_backend_url', url);
-                      }}
-                      placeholder="http://localhost:5001"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => testBackendConnection()}
-                      className="bg-primary hover:bg-primary-container text-white px-5 py-2.5 rounded-xl font-sans text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-xs whitespace-nowrap"
-                    >
-                      Test Connection
-                    </button>
+              <div className="p-4 bg-surface-container-low/50 rounded-2xl border border-outline-variant/60 flex flex-col justify-between gap-4">
+                
+                {/* Subscription Plan */}
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[9px] font-bold text-outline uppercase tracking-wider block">Current Plan</label>
+                  <div className="font-sans text-xs font-bold text-on-surface flex items-center gap-2 mt-1">
+                    <span className="material-symbols-outlined text-amber-500 text-lg">workspace_premium</span>
+                    FORENSIQ Investigator Pro
+                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] uppercase ml-2 tracking-wide">Active</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Setup Guide instructions inside Settings */}
-              <div className="p-4 bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl text-xs text-[#0369A1] leading-relaxed space-y-2 select-text">
-                <h4 className="font-extrabold uppercase tracking-wider flex items-center gap-1.5 text-[#0369A1]">
-                  <span className="material-symbols-outlined text-sm">info</span>
-                  How to start FORENSIQ AI:
-                </h4>
-                <ol className="list-decimal pl-5 space-y-1 font-medium">
-                  <li>Open terminal</li>
-                  <li>Type: <code>python launcher.py</code></li>
-                  <li>Wait for 'Backend ONLINE' message</li>
-                  <li>Open <code>http://localhost:3000</code></li>
-                  <li>See green dot = ready!</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* API Access Section */}
-        <section className="bg-white border border-outline-variant rounded-2xl p-6 shadow-xs">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-full md:w-1/3 select-none">
-              <h2 className="font-headline text-base font-bold text-on-surface mb-1">API Access</h2>
-              <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-                Connect your forensic pipeline to external automated workflows.
-              </p>
-            </div>
-
-            <div className="w-full md:w-2/3 space-y-4">
-              <div className="p-4 bg-surface-container-low/50 rounded-2xl border border-outline-variant/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1 text-left overflow-hidden w-full sm:w-auto">
-                  <label className="font-mono text-[9px] font-bold text-outline uppercase tracking-wider block">Production API Key</label>
-                  <div className="font-mono text-xs font-semibold text-on-surface flex items-center gap-2 select-text">
-                    {apiKeyVisible ? (
-                      <span className="font-mono tracking-wide">{apiKey}</span>
-                    ) : (
-                      <span className="font-mono tracking-widest text-outline">••••••••••••••••••••••••••••••••</span>
-                    )}
-                    <button 
-                      onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                      type="button" 
-                      className="text-primary hover:bg-surface-container p-1 rounded-sm transition-colors cursor-pointer flex items-center justify-center"
-                    >
-                      <span className="material-symbols-outlined text-base">
-                        {apiKeyVisible ? 'visibility_off' : 'visibility'}
-                      </span>
+                
+                {/* 2FA */}
+                <div className="space-y-2 text-left mt-2 border-t border-outline-variant/60 pt-4">
+                  <label className="font-mono text-[9px] font-bold text-outline uppercase tracking-wider block">Two-Factor Authentication</label>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-on-surface">
+                      <span className="material-symbols-outlined text-primary text-base">phonelink_lock</span>
+                      <span className="font-sans text-xs font-semibold">Authenticator App</span>
+                    </div>
+                    <button className="bg-surface-container border border-outline-variant text-on-surface px-4 py-1.5 rounded-lg font-sans text-xs font-bold hover:bg-slate-100 transition-all cursor-pointer">
+                      Manage 2FA
                     </button>
                   </div>
                 </div>
 
-                <button 
-                  onClick={handleRegenerateKey}
-                  disabled={isRegenerating}
-                  className="bg-primary text-white px-4 py-2 rounded-xl font-sans text-xs font-bold hover:bg-primary-container transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 select-none shadow-xs text-center"
-                >
-                  <span className={`material-symbols-outlined text-[16px] ${isRegenerating ? 'animate-spin' : ''}`}>refresh</span>
-                  {isRegenerating ? 'REGENERATING...' : 'REGENERATE'}
-                </button>
-              </div>
+                {/* Login History */}
+                <div className="space-y-2 text-left mt-2 border-t border-outline-variant/60 pt-4">
+                  <label className="font-mono text-[9px] font-bold text-outline uppercase tracking-wider block">Recent Activity</label>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col text-on-surface">
+                      <span className="font-sans text-xs font-semibold">Last login from Windows / Chrome</span>
+                      <span className="font-sans text-[10px] text-on-surface-variant">Today at 10:45 AM • IP: 192.168.1.1</span>
+                    </div>
+                    <button className="text-primary hover:underline font-sans text-xs font-bold cursor-pointer">
+                      View all
+                    </button>
+                  </div>
+                </div>
 
-              {/* API Notice block */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-200">
-                <span className="material-symbols-outlined text-amber-600 text-[18px]">info</span>
-                <p className="font-sans text-[11px] text-amber-800 font-bold select-none text-left">
-                  Monthly API quota: {quota.toLocaleString()} / 10,000 requests used.
-                </p>
               </div>
             </div>
           </div>

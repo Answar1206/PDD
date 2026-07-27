@@ -8,8 +8,7 @@ import subprocess
 import urllib.request
 import urllib.error
 import re
-
-PORT = 5000
+PORT = 5001
 should_run = True
 flask_proc = None
 tunnel_proc = None
@@ -20,7 +19,7 @@ def log(msg):
 def check_backend_alive():
     try:
         urllib.request.urlopen(
-            f"http://localhost:{PORT}/ping",
+            f"http://127.0.0.1:{PORT}/ping",
             timeout=5
         )
         return True
@@ -84,9 +83,13 @@ def start_flask():
     kill_process(flask_proc)
     time.sleep(2)
 
-    log("Starting Flask backend on port 5000...")
+    python_exe = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv", "Scripts", "python.exe")
+    if not os.path.exists(python_exe):
+        python_exe = sys.executable
+
+    log("Starting Flask backend on port 5001...")
     flask_proc = subprocess.Popen(
-        [sys.executable, "app.py"],
+        [python_exe, "-u", "app.py"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -112,7 +115,7 @@ def start_flask():
             log("Backend process died during startup!")
             return False
         if check_backend_alive():
-            log("Backend is ONLINE at localhost:5000")
+            log("Backend is ONLINE at 127.0.0.1:5001")
             return True
 
     log("Backend started but health check uncertain")
@@ -130,7 +133,7 @@ def start_tunnel(cf_bin):
     log("Starting cloudflared tunnel...")
     tunnel_proc = subprocess.Popen(
         [cmd, "tunnel", "--url",
-         f"http://localhost:{PORT}",
+         f"http://127.0.0.1:{PORT}",
          "--no-autoupdate"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -169,7 +172,7 @@ def start_tunnel(cf_bin):
                 return url
 
     log("Could not get tunnel URL. "
-        "Using localhost only.")
+        "Using 127.0.0.1 only.")
     return None
 
 def monitor_forever(cf_bin):
@@ -258,7 +261,7 @@ def main():
     if cf_bin:
         start_tunnel(cf_bin)
     else:
-        log("No tunnel - using localhost:5000 only")
+        log("No tunnel - using 127.0.0.1:5001 only")
 
     # Monitor forever
     try:

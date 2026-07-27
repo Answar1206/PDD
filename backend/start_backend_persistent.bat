@@ -6,8 +6,8 @@ echo ======================================================
 echo 🚀 STARTING FORENSIQ AI BACKEND (PERSISTENT BACKGROUND)
 echo ======================================================
 echo.
-echo Checking if backend is already running on port 5000...
-powershell -Command "$conn = Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue; if ($conn) { write-host 'Backend is already running!' -ForegroundColor Green; exit 0 } else { exit 1 }"
+echo Checking if backend is already running on port 5001...
+powershell -Command "$conn = Get-NetTCPConnection -LocalPort 5001 -ErrorAction SilentlyContinue; if ($conn) { write-host 'Backend is already running!' -ForegroundColor Green; exit 0 } else { exit 1 }"
 
 if %ERRORLEVEL% EQU 0 (
     echo Backend is already active. No action needed.
@@ -22,7 +22,7 @@ echo Waiting for server to initialize...
 timeout /t 5 /nobreak >nul
 
 echo Checking connection...
-powershell -Command "$conn = Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue; if ($conn) { write-host '🚀 Backend successfully started and listening on port 5000!' -ForegroundColor Green } else { write-host '⌛ Backend is still loading machine learning models in the background. It will be fully ready in a few seconds.' -ForegroundColor Yellow }"
+powershell -Command "$conn = Get-NetTCPConnection -LocalPort 5001 -ErrorAction SilentlyContinue; if ($conn) { write-host '🚀 Backend successfully started and listening on port 5001!' -ForegroundColor Green } else { write-host '⌛ Backend is still loading machine learning models in the background. It will be fully ready in a few seconds.' -ForegroundColor Yellow }"
 
 :end
 echo.

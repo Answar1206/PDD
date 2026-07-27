@@ -102,7 +102,7 @@ export default function TextAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog
       }
     } catch (err: any) {
       console.error('Full error:', err);
-      if (err.message.includes('fetch') || err.message.includes('Failed') || err.message.includes('NetworkError')) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
         setErrorMessage('Cannot connect to backend. The server might still be starting, please wait a moment.');
       } else {
         setErrorMessage(err.message || 'Unknown error occurred');
@@ -116,7 +116,13 @@ export default function TextAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog
     setText(DEFAULT_TEXT_RESULT.rawText);
   };
 
-  const ringDashoffset = scanResult ? 565 - (565 * scanResult.authenticityScore) / 100 : 565;
+  const getScoreColor = (score: number) => {
+    if (score >= 75) return '#86efac'; // Light Green
+    if (score >= 45) return '#D97706'; // Yellow
+    return '#DC2626'; // Red
+  };
+
+  const ringDashoffset = scanResult ? 502 - (502 * scanResult.authenticityScore) / 100 : 502;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left animate-in fade-in duration-300">
@@ -285,7 +291,7 @@ export default function TextAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog
               <p className="font-sans text-xs text-on-surface-variant leading-relaxed px-4">{scanResult.subTitle}</p>
             </div>
 
-            {/* Authenticity Score Gauge */}
+              {/* Authenticity Score Gauge */}
             <div className="bg-white rounded-2xl border border-outline-variant p-6 shadow-xs flex flex-col items-center">
               <div className="relative w-44 h-44 mb-4 select-none">
                 <svg className="w-full h-full transform -rotate-90">
@@ -301,23 +307,23 @@ export default function TextAnalysis({ backendUrl, modelsReady, onAddAnalyzedLog
                   ></circle>
                   {/* Gauge indicator */}
                   <circle 
-                    className="drop-shadow-[0_0_8px_rgba(134,239,172,0.6)]" 
                     cx="88" 
                     cy="88" 
                     fill="transparent" 
                     r="80" 
-                    stroke="#86efac" 
+                    stroke={getScoreColor(scanResult.authenticityScore)} 
                     strokeWidth="10"
                     strokeDasharray="502"
-                    strokeDashoffset={502 - (502 * scanResult.authenticityScore) / 100}
+                    strokeDashoffset={ringDashoffset}
                     strokeLinecap="round"
                     style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                    className={scanResult.authenticityScore >= 75 ? 'drop-shadow-[0_0_8px_rgba(134,239,172,0.6)]' : ''}
                   ></circle>
                 </svg>
                 {/* Visual Label over gauge */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="font-headline text-3xl font-black text-on-surface">{scanResult.authenticityScore}%</span>
-                  <span className="font-mono text-[9px] font-bold text-[#86efac] drop-shadow-sm uppercase tracking-wider">Authenticity</span>
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider drop-shadow-sm" style={{ color: getScoreColor(scanResult.authenticityScore) }}>Authenticity</span>
                 </div>
               </div>
 

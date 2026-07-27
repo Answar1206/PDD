@@ -5,21 +5,12 @@ echo ======================================================
 echo 🛑 STOPPING FORENSIQ AI BACKEND
 echo ======================================================
 echo.
-echo Searching for active virtual environment Python processes...
+echo Searching for active Python processes and stopping them...
 
-powershell -Command "
-$procs = Get-Process python -ErrorAction SilentlyContinue | Where-Object { $_.Path -like '*PDD\.venv*' };
-if ($procs) {
-    foreach ($p in $procs) {
-        Stop-Process -Id $p.Id -Force;
-        Write-Host 'Stopped backend process with ID:' $p.Id -ForegroundColor Green
-    }
-    Write-Host '✅ All FORENSIQ AI backend processes stopped!' -ForegroundColor Green
-} else {
-    Write-Host 'ℹ️ No active FORENSIQ AI backend processes found running.' -ForegroundColor Yellow
-}
-"
+taskkill /F /IM python.exe /T
 
 echo.
+echo ======================================================
+echo ✅ All FORENSIQ AI backend processes stopped!
 echo ======================================================
 pause

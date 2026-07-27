@@ -5,6 +5,128 @@
 
 import React, { useState, useMemo } from 'react';
 import { ForensicRecord, AssetType } from '../types';
+import { motion } from 'motion/react';
+
+export const TrendGraph = ({ records, isMini = false }: { records: ForensicRecord[], isMini?: boolean }) => {
+  if (!records || records.length === 0) return null;
+
+  const chronological = [...records].reverse().slice(-10);
+  const plotPoints = chronological.length === 1 ? [chronological[0], chronological[0]] : chronological;
+  
+  const width = 800;
+  const height = 240;
+  const padX = 100;
+  const padYTop = 20;
+  const padYBottom = 220;
+  const usableWidth = width - 2 * padX;
+  const usableHeight = padYBottom - padYTop;
+
+  const points = plotPoints.map((rec, i) => {
+    const x = padX + (i / (plotPoints.length - 1)) * usableWidth;
+    const y = padYBottom - (rec.score / 100) * usableHeight;
+    return { x, y, date: rec.date.split(' • ')[0] };
+  });
+
+  const getPath = (pts: {x:number, y:number}[]) => {
+    if (pts.length === 0) return "";
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const curr = pts[i];
+      const next = pts[i + 1];
+      const cx = (curr.x + next.x) / 2;
+      d += ` C ${cx} ${curr.y}, ${cx} ${next.y}, ${next.x} ${next.y}`;
+    }
+    return d;
+  };
+
+  const path = getPath(points);
+  const areaPath = path + ` L ${points[points.length - 1].x} ${padYBottom} L ${points[0].x} ${padYBottom} Z`;
+
+  return (
+    <motion.div 
+      initial={{ rotateX: 20, opacity: 0, y: 30, scale: 0.95 }}
+      animate={{ rotateX: [20, -2, 2, 0], opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 1.2, ease: "easeOut" }}
+      style={{ perspective: 1200, transformStyle: "preserve-3d" }}
+      className={`bg-white ${isMini ? 'w-full h-full bg-transparent p-0' : 'border border-outline-variant rounded-2xl p-6 shadow-2xl shadow-primary/10 w-full relative overflow-hidden group select-none z-10'}`}
+    >
+      {!isMini && <h2 className="font-headline text-lg font-bold text-on-surface mb-6 text-left">Detection Accuracy Trend</h2>}
+      <div className={`relative w-full ${isMini ? 'h-full mt-4 scale-110 opacity-70 group-hover:opacity-100 group-hover:scale-[1.15] transition-all duration-700' : 'h-[240px]'}`}>
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
+          <defs>
+            <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#800000" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#800000" stopOpacity="0" />
+            </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          {/* Grid Lines */}
+          <line x1="60" y1={padYTop} x2="780" y2={padYTop} stroke="#d4c4b9" strokeWidth="0.5" strokeDasharray="4 4" />
+          <line x1="60" y1={padYTop + usableHeight * 0.33} x2="780" y2={padYTop + usableHeight * 0.33} stroke="#d4c4b9" strokeWidth="0.5" strokeDasharray="4 4" />
+          <line x1="60" y1={padYTop + usableHeight * 0.67} x2="780" y2={padYTop + usableHeight * 0.67} stroke="#d4c4b9" strokeWidth="0.5" strokeDasharray="4 4" />
+          <line x1="60" y1={padYBottom} x2="780" y2={padYBottom} stroke="#d4c4b9" strokeWidth="0.5" strokeDasharray="4 4" />
+
+          {/* Y-axis Labels */}
+          <text x="50" y={padYTop + 4} fontSize="10" fill="#5a3c3c" textAnchor="end" fontFamily="Inter, sans-serif" fontWeight="bold">100%</text>
+          <text x="50" y={padYTop + usableHeight * 0.33 + 4} fontSize="10" fill="#5a3c3c" textAnchor="end" fontFamily="Inter, sans-serif" fontWeight="bold">67%</text>
+          <text x="50" y={padYTop + usableHeight * 0.67 + 4} fontSize="10" fill="#5a3c3c" textAnchor="end" fontFamily="Inter, sans-serif" fontWeight="bold">33%</text>
+          <text x="50" y={padYBottom + 4} fontSize="10" fill="#5a3c3c" textAnchor="end" fontFamily="Inter, sans-serif" fontWeight="bold">0%</text>
+
+          {/* Area under the curve */}
+          <motion.path 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            d={areaPath} 
+            fill="url(#trendGradient)" 
+          />
+          
+          {/* Line Chart */}
+          <motion.path 
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            d={path} 
+            fill="none" 
+            stroke="#800000" 
+            strokeWidth="3" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+          />
+
+          {/* Data Points */}
+          {points.map((p, i) => (
+            <motion.circle 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 1 + i * 0.1, type: 'spring' }}
+              key={i} 
+              cx={p.x} 
+              cy={p.y} 
+              r={i === points.length - 1 ? 6 : 4} 
+              fill={i === points.length - 1 ? "#800000" : "#ffffff"} 
+              stroke={i === points.length - 1 ? "#ffffff" : "#800000"} 
+              strokeWidth={i === points.length - 1 ? 2 : 2.5} 
+              filter={i === points.length - 1 ? "url(#glow)" : undefined}
+            />
+          ))}
+
+          {/* X-axis Labels */}
+          {points.length > 0 && (
+            <text x={points[0].x} y={padYBottom + 18} fontSize="10" fill="#5a3c3c" textAnchor="middle" fontFamily="Inter, sans-serif">{points[0].date}</text>
+          )}
+          {points.length > 1 && (
+            <text x={points[points.length - 1].x} y={padYBottom + 18} fontSize="10" fill="#5a3c3c" textAnchor="middle" fontFamily="Inter, sans-serif">{points[points.length - 1].date}</text>
+          )}
+        </svg>
+      </div>
+    </motion.div>
+  );
+};
 
 interface HistoryTableProps {
   records: ForensicRecord[];
@@ -164,6 +286,9 @@ export default function HistoryTable({ records, onSelectRecord, onDeleteRecord, 
           </button>
         </div>
       </div>
+
+      {/* Accuracy Trend Graph */}
+      <TrendGraph records={records} />
 
       {/* Filter Pills */}
       <div className="flex overflow-x-auto gap-2.5 pb-2 scrollbar-none select-none">
