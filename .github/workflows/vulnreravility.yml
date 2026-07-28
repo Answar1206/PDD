@@ -1,0 +1,40 @@
+name: Vulnerability
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  vulnerability-tests:
+    name: Vulnerability Tests (300)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install openpyxl
+
+      - name: Validate Vulnerability Test Cases Count
+        run: |
+          python -c "
+          import openpyxl
+          wb = openpyxl.load_workbook('tests/test_suites/vulnerability_test_cases.xlsx')
+          rows = wb.active.max_row - 1
+          print(f'Found {rows} test cases.')
+          assert rows == 300, f'Expected 300 test cases, found {rows}'
+          "
+
+      - name: Upload Vulnerability Excel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability_test_cases
+          path: tests/test_suites/vulnerability_test_cases.xlsx
