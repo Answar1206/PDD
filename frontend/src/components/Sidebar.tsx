@@ -19,18 +19,6 @@ export default function Sidebar({ currentTab, onNavigate, storageUsedGB, storage
     <aside className="hidden md:flex fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-outline-variant flex-col p-6 gap-6 select-none" id="desktop-sidebar">
       <nav className="flex flex-col gap-1.5 flex-1">
         <button
-          onClick={() => onNavigate('history')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-medium text-sm cursor-pointer text-left ${
-            currentTab === 'history'
-              ? 'bg-surface-container text-primary font-bold shadow-xs'
-              : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
-          }`}
-        >
-          <span className={`material-symbols-outlined text-xl ${currentTab === 'history' ? 'filled-icon' : 'empty-icon'}`}>history</span>
-          <span>History</span>
-        </button>
-
-        <button
           onClick={() => onNavigate('video')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-medium text-sm cursor-pointer text-left ${
             currentTab === 'video'
@@ -55,6 +43,18 @@ export default function Sidebar({ currentTab, onNavigate, storageUsedGB, storage
         </button>
 
         <button
+          onClick={() => onNavigate('pdf')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-medium text-sm cursor-pointer text-left ${
+            currentTab === 'pdf'
+              ? 'bg-surface-container text-primary font-bold shadow-xs'
+              : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
+          }`}
+        >
+          <span className={`material-symbols-outlined text-xl ${currentTab === 'pdf' ? 'filled-icon' : 'empty-icon'}`}>picture_as_pdf</span>
+          <span>PDF Documents</span>
+        </button>
+
+        <button
           onClick={() => onNavigate('text')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-medium text-sm cursor-pointer text-left ${
             currentTab === 'text'
@@ -67,15 +67,15 @@ export default function Sidebar({ currentTab, onNavigate, storageUsedGB, storage
         </button>
 
         <button
-          onClick={() => onNavigate('pdf')}
+          onClick={() => onNavigate('history')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-medium text-sm cursor-pointer text-left ${
-            currentTab === 'pdf'
+            currentTab === 'history'
               ? 'bg-surface-container text-primary font-bold shadow-xs'
               : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
           }`}
         >
-          <span className={`material-symbols-outlined text-xl ${currentTab === 'pdf' ? 'filled-icon' : 'empty-icon'}`}>picture_as_pdf</span>
-          <span>PDF Documents</span>
+          <span className={`material-symbols-outlined text-xl ${currentTab === 'history' ? 'filled-icon' : 'empty-icon'}`}>history</span>
+          <span>History</span>
         </button>
 
         <button

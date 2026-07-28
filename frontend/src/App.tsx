@@ -114,7 +114,19 @@ export default function App() {
   const [user, setUser] = useState<UserProfile>(getInitialUser);
 
   const [currentTab, setCurrentTab] = useState<TabType>('home');
-  const [records, setRecords] = useState<ForensicRecord[]>([]);
+  const [records, setRecords] = useState<ForensicRecord[]>(() => {
+    const saved = localStorage.getItem('forensiq_records');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('forensiq_records', JSON.stringify(records));
+  }, [records]);
 
   const storageUsedGB = 7.2;
   const storageMaxGB = 10;
@@ -204,24 +216,6 @@ export default function App() {
           <span className="font-bold text-on-surface-variant uppercase tracking-wider text-[10px]">
             {backendOnline ? (modelsReady ? 'Ready to analyze' : 'Warming up AI models...') : 'Connecting...'}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <input 
-            type="text" 
-            value={backendUrl}
-            onChange={(e) => setBackendUrl(e.target.value)}
-            className="border border-outline-variant rounded-md px-2 py-1 w-56 text-xs focus:outline-none focus:border-primary font-mono text-on-surface bg-surface-container-low"
-            placeholder="http://127.0.0.1:5001"
-          />
-          <button 
-            onClick={() => {
-              localStorage.setItem("forensiq_backend_url", backendUrl);
-              testBackendConnection();
-            }}
-            className="bg-primary hover:bg-primary-container text-white px-3 py-1.5 rounded-md font-bold transition-colors cursor-pointer text-xs"
-          >
-            Connect
-          </button>
         </div>
       </div>
 

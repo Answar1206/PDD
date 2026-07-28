@@ -15,18 +15,6 @@ export default function BottomNav({ currentTab, onNavigate }: BottomNavProps) {
     <nav className="md:hidden fixed bottom-0 w-full z-50 flex items-center overflow-x-auto bg-white border-t border-outline-variant shadow-lg no-scrollbar" id="mobile-bottom-nav">
       <div className="flex w-full min-w-max justify-between px-2 py-2 gap-2">
         <button 
-          onClick={() => onNavigate('history')} 
-          className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all ${
-            currentTab === 'history'
-              ? 'text-primary font-bold scale-105'
-              : 'text-on-surface-variant hover:text-primary'
-          }`}
-        >
-          <span className={`material-symbols-outlined text-[20px] ${currentTab === 'history' ? 'filled-icon' : 'empty-icon'}`}>history</span>
-          <span className="font-sans text-[9px] tracking-tight whitespace-nowrap">History</span>
-        </button>
-
-        <button 
           onClick={() => onNavigate('video')}
           className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-16 transition-all ${
             currentTab === 'video'
@@ -51,6 +39,18 @@ export default function BottomNav({ currentTab, onNavigate }: BottomNavProps) {
         </button>
 
         <button 
+          onClick={() => onNavigate('pdf')}
+          className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-16 transition-all ${
+            currentTab === 'pdf'
+              ? 'text-primary font-bold scale-105'
+              : 'text-on-surface-variant hover:text-primary'
+          }`}
+        >
+          <span className={`material-symbols-outlined text-[20px] ${currentTab === 'pdf' ? 'filled-icon' : 'empty-icon'}`}>picture_as_pdf</span>
+          <span className="font-sans text-[9px] tracking-tight whitespace-nowrap">PDF</span>
+        </button>
+
+        <button 
           onClick={() => onNavigate('text')}
           className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-16 transition-all ${
             currentTab === 'text'
@@ -63,15 +63,15 @@ export default function BottomNav({ currentTab, onNavigate }: BottomNavProps) {
         </button>
 
         <button 
-          onClick={() => onNavigate('pdf')}
+          onClick={() => onNavigate('history')} 
           className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-16 transition-all ${
-            currentTab === 'pdf'
+            currentTab === 'history'
               ? 'text-primary font-bold scale-105'
               : 'text-on-surface-variant hover:text-primary'
           }`}
         >
-          <span className={`material-symbols-outlined text-[20px] ${currentTab === 'pdf' ? 'filled-icon' : 'empty-icon'}`}>picture_as_pdf</span>
-          <span className="font-sans text-[9px] tracking-tight whitespace-nowrap">PDF</span>
+          <span className={`material-symbols-outlined text-[20px] ${currentTab === 'history' ? 'filled-icon' : 'empty-icon'}`}>history</span>
+          <span className="font-sans text-[9px] tracking-tight whitespace-nowrap">History</span>
         </button>
 
         <button 
