@@ -1,4 +1,5 @@
 name: Validation
+run-name: Validation.yml
 
 on:
   push:

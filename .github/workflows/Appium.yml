@@ -1,4 +1,5 @@
 name: Appium
+run-name: Appium.yml
 
 on:
   push:
