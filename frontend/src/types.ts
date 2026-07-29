@@ -109,6 +109,7 @@ export interface VideoAnalysisResult {
   verdict: string;
   description: string;
   videoUrl: string;
+  downloadedVideoUrl?: string;
   framesAnalyzed: number;
   temporalIncoherence: string;
   codecMismatch: boolean;

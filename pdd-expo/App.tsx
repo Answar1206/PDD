@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Platform, Dimensions, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Platform, Dimensions, ActivityIndicator, NativeModules } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 // Import Types and Mock Data
 import { UserProfile, ForensicRecord, AssetType } from './src/types';
@@ -16,6 +17,37 @@ import VideoAnalysis from './src/components/VideoAnalysis';
 import HistoryLogs from './src/components/HistoryLogs';
 import Settings from './src/components/Settings';
 import HowItWorks from './src/components/HowItWorks';
+
+// Helper to dynamically detect computer's IP when running in development
+const getDefaultBackendUrl = () => {
+  if (Platform.OS === 'web') {
+    return 'http://127.0.0.1:5001';
+  }
+  try {
+    // 1. Try Expo Constants hostUri (standard in Expo Go)
+    const hostUri = Constants.expoConfig?.hostUri;
+    console.log("[DEBUG] Constants.expoConfig.hostUri is:", hostUri);
+    if (hostUri) {
+      const ip = hostUri.split(':')[0];
+      if (ip) {
+        return `http://${ip}:5001`;
+      }
+    }
+
+    // 2. Fallback to NativeModules scriptURL
+    const scriptURL = NativeModules.SourceCode?.scriptURL;
+    console.log("[DEBUG] NativeModules.SourceCode.scriptURL is:", scriptURL);
+    if (scriptURL) {
+      const match = scriptURL.match(/^(?:https?|exp):\/\/([^:/]+)(:\d+)?/);
+      if (match && match[1]) {
+        return `http://${match[1]}:5001`;
+      }
+    }
+  } catch (e) {
+    console.log('Error getting default backend URL:', e);
+  }
+  return 'http://127.0.0.1:5001';
+};
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,7 +76,22 @@ export default function App() {
       localStorage.setItem('forensiq_records', JSON.stringify(records));
     }
   }, [records]);
-  const [backendUrl, setBackendUrl] = useState('http://127.0.0.1:5001');
+
+  const [backendUrl, setBackendUrl] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem('forensiq_backend_url');
+      if (saved) return saved;
+    }
+    return getDefaultBackendUrl();
+  });
+
+  // Keep saved backend URL synchronized on web
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('forensiq_backend_url', backendUrl);
+    }
+  }, [backendUrl]);
+
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [modelsReady, setModelsReady] = useState<boolean | null>(null);
   const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
@@ -70,7 +117,7 @@ export default function App() {
         return { online: true, ready: data.models_ready === true };
       }
     } catch (e) {
-      console.log('Backend check failed:', e);
+      console.log('Backend check failed for URL:', backendUrl, e);
     }
     setBackendOnline(false);
     setModelsReady(null);

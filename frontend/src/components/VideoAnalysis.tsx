@@ -196,6 +196,7 @@ export default function VideoAnalysis({ backendUrl, modelsReady, onAddAnalyzedLo
         verdict: score >= 75 ? 'Authentic Media' : (score >= 45 ? 'Suspicious' : 'Altered/Generated Media'),
         description: `Verification completed using ensembled analysis models. Coherence checked across ${data.frames_analyzed || 5} keyframes.`,
         videoUrl: isUrl ? videoUrl : URL.createObjectURL(selectedFile!),
+        downloadedVideoUrl: data.downloaded_video_url || undefined,
         framesAnalyzed: data.frames_analyzed || 5,
         temporalIncoherence: score > 75 ? '0.02ms (Excellent)' : '1.45ms (High Variance)',
         codecMismatch: score < 50,
@@ -506,14 +507,14 @@ export default function VideoAnalysis({ backendUrl, modelsReady, onAddAnalyzedLo
             <div className="bg-white border border-outline-variant rounded-2xl p-5 shadow-xs">
               <label className="font-mono text-[10px] font-bold text-on-surface-variant block mb-2.5 uppercase tracking-wider flex items-center gap-1.5">
                 <span>Analyze via URL</span>
-                {videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('shorts')) && (
+                {videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) && (
                   <span className="material-symbols-outlined text-red-600 text-sm animate-pulse">smart_display</span>
                 )}
               </label>
               <div className="flex gap-2">
                 <input 
                   className="flex-1 bg-surface-container-low border border-outline-variant/60 rounded-xl px-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface truncate disabled:opacity-50" 
-                  placeholder="https://youtube.com/shorts/y8kwHsJD2V8" 
+                  placeholder="Enter YouTube, Shorts, TikTok, Instagram URL..." 
                   type="text"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
@@ -553,10 +554,18 @@ export default function VideoAnalysis({ backendUrl, modelsReady, onAddAnalyzedLo
                   controls
                   loop
                 />
+              ) : scanResult && scanResult.downloadedVideoUrl ? (
+                <video 
+                  ref={mainVideoRef}
+                  src={backendUrl + scanResult.downloadedVideoUrl}
+                  className="w-full h-full object-contain"
+                  controls
+                  loop
+                />
               ) : videoUrl ? (
                 <iframe 
                   className="w-full h-full"
-                  src={videoUrl.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/")} 
+                  src={videoUrl.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/").replace("shorts/", "embed/")} 
                   title="YouTube video player"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                   allowFullScreen

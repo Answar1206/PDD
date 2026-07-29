@@ -1,6 +1,6 @@
 @echo off
 echo ======================================================
-echo 🚀 STARTING PDD EXPO APPLICATION (WEB + BACKEND)
+echo 🚀 STARTING FORENSIQ AI APPLICATION (WEB + BACKEND)
 echo ======================================================
 echo.
 

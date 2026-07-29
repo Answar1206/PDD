@@ -18,7 +18,7 @@ import numpy as np
 import cv2
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from typing import Optional
 # NLTK imports with robust fallback
@@ -662,23 +662,49 @@ def download_youtube_video(url):
     """
     import yt_dlp
     out_template = os.path.join(TEMP_DIR, '%(id)s.%(ext)s')
+    
+    # Base options without cookies
     ydl_opts = {
         'format': 'best[height<=720]/best',
         'outtmpl': out_template,
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': False
+        'extract_flat': False,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'referer': 'https://www.youtube.com/',
+        'nocheckcertificate': True
     }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filepath = ydl.prepare_filename(info)
-        if os.path.exists(filepath):
-            return filepath
-        base, _ = os.path.splitext(filepath)
-        for ext in ['.mp4', '.mkv', '.webm', '.3gp']:
-            if os.path.exists(base + ext):
-                return base + ext
-        raise FileNotFoundError(f"Downloaded video not found at {filepath}")
+    
+    def extract_and_get_path(opts):
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filepath = ydl.prepare_filename(info)
+            if os.path.exists(filepath):
+                return filepath
+            base, _ = os.path.splitext(filepath)
+            for ext in ['.mp4', '.mkv', '.webm', '.3gp']:
+                if os.path.exists(base + ext):
+                    return base + ext
+            raise FileNotFoundError(f"Downloaded video not found at {filepath}")
+
+    # Try downloading normally first
+    try:
+        return extract_and_get_path(ydl_opts)
+    except Exception as base_err:
+        print(f"[FORENSIQ] Base download failed: {base_err}. Trying fallback browsers for cookies...")
+        
+        # List of browsers to try for cookies
+        browsers = ['chrome', 'edge', 'firefox', 'opera']
+        for browser in browsers:
+            try:
+                opts = ydl_opts.copy()
+                opts['cookiesfrombrowser'] = (browser,)
+                return extract_and_get_path(opts)
+            except Exception as e:
+                print(f"[FORENSIQ] Failed download with cookies from {browser}: {e}")
+        
+        # If all cookie options failed, raise the original error
+        raise base_err
 
 def extract_frames(video_path, max_frames=5):
     """
@@ -1605,6 +1631,34 @@ def detect_audio_watermark(video_path):
 def preprocess_video_for_speed(video_path):
     return 5
 
+def cleanup_old_temp_files():
+    """
+    Deletes files in TEMP_DIR that are older than 15 minutes (900 seconds)
+    to save disk space on the server.
+    """
+    try:
+        now = time.time()
+        for f in os.listdir(TEMP_DIR):
+            fp = os.path.join(TEMP_DIR, f)
+            if os.path.isfile(fp):
+                if now - os.path.getmtime(fp) > 900:
+                    os.unlink(fp)
+    except Exception as e:
+        print(f"Error cleaning up temp files: {e}")
+
+@app.get("/videos/{filename}")
+async def get_video(filename: str):
+    """
+    Serves a video from the temp directory.
+    """
+    if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    file_path = os.path.join(TEMP_DIR, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="video/mp4")
+    raise HTTPException(status_code=404, detail="Video not found")
+
 # ---------------------------------------------------------
 # VIDEO ANALYSIS ROUTE
 # ---------------------------------------------------------
@@ -1613,6 +1667,7 @@ async def analyze_video(
     request: Request,
     file: Optional[UploadFile] = File(None)
 ):
+    cleanup_old_temp_files()
     if not models_ready:
         return JSONResponse(status_code=503, content={"success": False, "error": "Models still loading, please wait 30-60 seconds and try again"})
     temp_filepath = None
@@ -1948,7 +2003,8 @@ async def analyze_video(
                 "fps": int(fps),
                 "frames_total": total_frames,
                 "file_size": file_size_str
-            }
+            },
+            "downloaded_video_url": f"/videos/{os.path.basename(temp_filepath)}" if "application/json" in content_type else None
         }
 
     except Exception as e:
@@ -1956,7 +2012,8 @@ async def analyze_video(
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
     finally:
-        if temp_filepath and os.path.exists(temp_filepath):
+        is_url_download = "application/json" in content_type if 'content_type' in locals() else False
+        if temp_filepath and os.path.exists(temp_filepath) and not is_url_download:
             try:
                 os.remove(temp_filepath)
             except Exception as ce:
@@ -1970,6 +2027,7 @@ async def analyze_fast(
     request: Request,
     file: Optional[UploadFile] = File(None)
 ):
+    cleanup_old_temp_files()
     if not models_ready:
         return JSONResponse(status_code=503, content={"success": False, "error": "Models still loading, please wait 30-60 seconds and try again"})
     temp_path = None
@@ -2149,14 +2207,16 @@ async def analyze_fast(
                  "score": int(audio_score),
                  "weight": "4%",
                  "description": audio_result.get("details", "Audio frequency watermark patterns checked")}
-            ]
+            ],
+            "downloaded_video_url": f"/videos/{os.path.basename(temp_path)}" if "application/json" in content_type else None
         }
 
     except Exception as e:
         traceback.print_exc()
         return {"success": False, "error": str(e)}
     finally:
-        if temp_path and os.path.exists(temp_path):
+        is_url_download = "application/json" in content_type if 'content_type' in locals() else False
+        if temp_path and os.path.exists(temp_path) and not is_url_download:
             try:
                 os.unlink(temp_path)
             except:
